@@ -2,6 +2,11 @@ const sqlite3 = require('sqlite3').verbose()
 const path = require('path')
 const fs = require('fs')
 
+let config = { startercoins: 100, startergems: 500 }
+try {
+  config = require('../config.json')
+} catch (e) {}
+
 const dbPath = path.join(__dirname, 'players.db')
 
 if (!fs.existsSync(path.dirname(dbPath))) {
@@ -62,13 +67,15 @@ const DBM = {
 
     const lowid = await this.getNewId()
     const name = 'LuaPlayer'
+    const startercoins = config.startercoins ?? 100
+    const startergems = config.startergems ?? 500
 
     return new Promise((resolve, reject) => {
       const stmt = db.prepare(`
         INSERT INTO plrs (lowid, token, name, trophies, gold, gems, TvTW, SW, DW, exp, registered)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `)
-      stmt.run(lowid, token, name, 0, 100, 500, 0, 0, 0, 0, 0, (err) => {
+      stmt.run(lowid, token, name, 0, startercoins, startergems, 0, 0, 0, 0, 0, (err) => {
         stmt.finalize()
         if (err) return reject(err)
         resolve({
@@ -76,8 +83,8 @@ const DBM = {
           token,
           name,
           trophies: 0,
-          gold: 100,
-          gems: 500,
+          gold: startercoins,
+          gems: startergems,
           TvTW: 0,
           SW: 0,
           DW: 0,
