@@ -335,10 +335,16 @@ class ByteStream {
 
     this.encode()
 
+    let payload = this.buffer
+    if (this.id !== 20100) {
+      payload = this.client.rc4.encrypt(payload)
+    }
+
     const header = Buffer.alloc(7)
     header.writeUInt16BE(this.id, 0)
-    header.writeUIntBE(this.buffer.length, 2, 3)
+    header.writeUIntBE(payload.length, 2, 3)
     header.writeUInt16BE(this.version, 5)
+    this.client.write(Buffer.concat([header, payload, Buffer.from([0xFF, 0xFF, 0x0, 0x0, 0x0, 0x0, 0x0])]))
     this.client.log(`Packet ${this.id} (${this.constructor.name}) was sent.`)
   }
 

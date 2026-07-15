@@ -1,9 +1,16 @@
 const net = require('net')
 const MessageFactory = require('./Protocol/MessageFactory')
+const RC4Session = require('./RC4')
 const server = new net.Server()
 const Messages = new MessageFactory()
 
-const PORT = 9339
+let config = {}
+try {
+  config = require('./config.json')
+} catch (e) {}
+
+const HOST = config.host || '0.0.0.0'
+const PORT = config.port || 9339
 
 server.on('connection', async (client) => {
   client.setNoDelay(true)
@@ -18,6 +25,7 @@ server.on('connection', async (client) => {
   client.buffer = Buffer.alloc(0)
   client.joined = false
   client.player = null
+  client.rc4 = new RC4Session()
 
   client.on('data', async (chunk) => {
     client.buffer = Buffer.concat([client.buffer, chunk])
@@ -31,8 +39,12 @@ server.on('connection', async (client) => {
         break
       }
 
-      const payload = client.buffer.slice(7, 7 + len)
+      let payload = client.buffer.slice(7, 7 + len)
       client.buffer = client.buffer.slice(7 + len)
+
+      if (id !== 10100) {
+        payload = client.rc4.decrypt(payload)
+      }
 
       if (id === 10101 && !client.joined) {
         client.joined = true
@@ -71,8 +83,17 @@ server.on('connection', async (client) => {
   })
 })
 
-server.once('listening', () => console.log(`[SERVER] >> Server started on ${PORT} port!`))
-server.listen(PORT)
+server.once('listening', () => {
+  console.log(`
+   _____      _          ____   _____ 
+  / ___/___  / /___     / __ ) / ___/ 
+  \\__ \\/ _ \\/ / __ \\   / __  | \\__ \\  
+ ___/ /  __/ / /_/ /  / /_/ / ___/ /  
+/____/\\___/_/\\____/  /_____/ /____/   
+  `)
+  console.log(`[SERVER] >> Server started on ${HOST}:${PORT}!`)
+})
+server.listen(PORT, HOST)
 
 process.on('uncaughtException', e => console.log(e))
 

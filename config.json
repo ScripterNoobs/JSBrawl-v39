@@ -1,4 +1,6 @@
 {
   "startercoins": 100,
-  "startergems": 500
+  "startergems": 500,
+  "rc4key": "fhsdjkiudoihfjsd",
+  "host": "0.0.0.0"
 }
